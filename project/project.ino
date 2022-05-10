@@ -3,7 +3,7 @@
 #include <Adafruit_SSD1306.h>
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+#define SCREEN_HEIGHT 32 // OLED display height, in pixels
 
 // Test
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
@@ -26,16 +26,16 @@ void setup() {
   //pinMode(A0,OUTPUT); //output to cooler
   analogWriteResolution(10);
   analogWrite(A0, 511);
-  pinMode(A1, INPUT); //THERMISTER 1
-  pinMode(A2, INPUT); //THERMISTER 2
-  pinMode(A3, INPUT); //THERMISTER 3
-  pinMode(A4, INPUT); //THERMISTER 4
-  pinMode(0, INPUT_PULLUP); //Increase Button
-  pinMode(1, INPUT_PULLUP); //Decrease Button
-  pinMode(2, INPUT_PULLUP); //Flip Button
-  attachInterrupt(digitalPinToInterrupt(0), increaseB, FALLING);
-  attachInterrupt(digitalPinToInterrupt(1), decreaseB, FALLING);
-  attachInterrupt(digitalPinToInterrupt(2), flipB, FALLING);
+  pinMode(A3, INPUT); //THERMISTER 1
+  pinMode(A4, INPUT); //THERMISTER 2
+  pinMode(A5, INPUT); //THERMISTER 3
+  pinMode(A6, INPUT); //THERMISTER 4
+  pinMode(1, INPUT_PULLUP); //Increase Button
+  pinMode(2, INPUT_PULLUP); //Decrease Button
+  pinMode(3, INPUT_PULLUP); //Flip Button
+  attachInterrupt(digitalPinToInterrupt(2), decreaseB, FALLING);
+  attachInterrupt(digitalPinToInterrupt(1), increaseB, FALLING);
+  attachInterrupt(digitalPinToInterrupt(3), flipB, FALLING);
 
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
     Serial.println("SSD1306 allocation failed");
@@ -44,7 +44,7 @@ void setup() {
   
   delay(2000);
   display.clearDisplay();
-  display.setTextSize(2);
+  display.setTextSize(.25);
   display.setTextColor(WHITE);
   display.setCursor(0,10);   
   display.println("\nset T = 2 C");
@@ -62,11 +62,12 @@ void loop() {
   delay(10);
 
   //read * scale to 3.3v - resistor error * scale to 5v
-  float thermister1 = (analogRead(A1)*.0038 - .35)*1.52;
-  //Serial.println(thermister1);
-  float thermister2 = (analogRead(A2)*.0038 - .33)*1.52;
-  float thermister3 = (analogRead(A3)*.0038 - .35)*1.52;
-  float thermister4 = (analogRead(A4)*.0038 - .35)*1.52;
+  float thermister1 = analogRead(A3)*.0033*1.52;
+  Serial.println(analogRead(A3));
+  Serial.println(thermister1);
+  float thermister2 = analogRead(A4)*.0033*1.52;
+  float thermister3 = analogRead(A5)*.0033*1.52;
+  float thermister4 = analogRead(A6)*.0033*1.52;
 
   //Serial.println(thermister1);
   //Serial.println(thermister2);
@@ -87,23 +88,25 @@ void loop() {
   temp = 1.0 / temp;                 // Invert
   temp -= 273.15;                         // convert absolute temp to C
   //Serial.println(temp);
+
+  temp = temp - 4;
   
   error = setTemp - temp;
   runningSum = runningSum + error;
   float deriv = error-lastVal;
   float pid = 512 + 35*error + .05*runningSum + 0*deriv;
-  /*if(pid > 1023) {
+  if(pid > 1023) {
     pid = 1023;
   }
   if(pid < 1) {
-    pid = 1
-  }*/
-  if( pid < 200 ) {
+    pid = 1;
+  }
+  /*if( pid < 200 ) {
     pid = 200;
   }
   if( pid > 900 ) {
     pid = 900;
-  }
+  }*/
   //Serial.print("Pid: ");
   Serial.println(pid);
   analogWriteResolution(10);
@@ -112,12 +115,12 @@ void loop() {
 
   display.clearDisplay();
   display.setCursor(0,10);
-  display.print("\nset temp = ");
+  display.print("set = ");
   display.print(setTemp);
   display.print(" C\n");
-  display.print("\ncur temp = ");
+  display.print("cur = ");
   display.print(temp);
-  display.print(" C\n");
+  display.print(" C");
   display.display();
 //  lcd.clear();
 //  lcd.setCursor(0,0);
