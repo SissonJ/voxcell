@@ -5,7 +5,6 @@
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
 
-// Test
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
@@ -31,11 +30,11 @@ void setup() {
   pinMode(A5, INPUT); //THERMISTER 3
   pinMode(A6, INPUT); //THERMISTER 4
   pinMode(1, INPUT_PULLUP); //Increase Button
-  pinMode(2, INPUT_PULLUP); //Decrease Button
-  pinMode(3, INPUT_PULLUP); //Flip Button
-  attachInterrupt(digitalPinToInterrupt(2), decreaseB, FALLING);
+  pinMode(4, INPUT_PULLUP); //Decrease Button
+  pinMode(5, INPUT_PULLUP); //Flip Button
   attachInterrupt(digitalPinToInterrupt(1), increaseB, FALLING);
-  attachInterrupt(digitalPinToInterrupt(3), flipB, FALLING);
+  attachInterrupt(digitalPinToInterrupt(4), decreaseB, FALLING);
+  attachInterrupt(digitalPinToInterrupt(5), flipB, FALLING);
 
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
     Serial.println("SSD1306 allocation failed");
@@ -56,15 +55,15 @@ void setup() {
 double lastVal = 0;
 double error = 0;
 double runningSum = 0;
-int setTemp = 2; //degrees celcius
+int setTemp = 20; //degrees celcius
 
 void loop() {
   delay(10);
 
   //read * scale to 3.3v - resistor error * scale to 5v
   float thermister1 = analogRead(A3)*.0033*1.52;
-  Serial.println(analogRead(A3));
-  Serial.println(thermister1);
+  //Serial.println(analogRead(A3));
+  //Serial.println(thermister1);
   float thermister2 = analogRead(A4)*.0033*1.52;
   float thermister3 = analogRead(A5)*.0033*1.52;
   float thermister4 = analogRead(A6)*.0033*1.52;
@@ -78,6 +77,9 @@ void loop() {
   //float vOut = (thermisterAve * 0.0038 - .3)*1.52;
   float vOut = thermisterAve;
   //Serial.println(vOut);
+
+  //float vOut = analogRead(A3)*.0033*1.52;
+  
   float r2 = vOut * r1 / ( vIn - vOut );
 
   float temp;
@@ -94,7 +96,7 @@ void loop() {
   error = setTemp - temp;
   runningSum = runningSum + error;
   float deriv = error-lastVal;
-  float pid = 512 + 35*error + .05*runningSum + 0*deriv;
+  float pid = 512 + 35*error + .05*runningSum + .05*deriv;
   if(pid > 1023) {
     pid = 1023;
   }
@@ -108,7 +110,7 @@ void loop() {
     pid = 900;
   }*/
   //Serial.print("Pid: ");
-  Serial.println(pid);
+  //Serial.println(pid);
   analogWriteResolution(10);
   analogWrite(A0, pid);
   lastVal = error;
@@ -133,20 +135,18 @@ void loop() {
 
 void increaseB() {
   if( setTemp > 29 ) {
-    setTemp = 30;
     return;
   }
   setTemp++;
-  delay(3000);
+  delayMicroseconds(2000);
 }
 
 void decreaseB() {
   if( setTemp < 3 ) {
-    setTemp = 2;
     return;
   }
   setTemp--;
-  delay(3000);
+  delayMicroseconds(2000);
 }
 
 void flipB() {
@@ -155,5 +155,5 @@ void flipB() {
   } else {
     setTemp = 2;
   }
-  delay(3000);
+  delayMicroseconds(2000);
 }
