@@ -62,23 +62,12 @@ void loop() {
 
   //read * scale to 3.3v - resistor error * scale to 5v
   float thermister1 = analogRead(A3)*.0033*1.52;
-  //Serial.println(analogRead(A3));
-  //Serial.println(thermister1);
   float thermister2 = analogRead(A4)*.0033*1.52;
   float thermister3 = analogRead(A5)*.0033*1.52;
   float thermister4 = analogRead(A6)*.0033*1.52;
 
-  //Serial.println(thermister1);
-  //Serial.println(thermister2);
-  //Serial.println(thermister3);
-  //Serial.println(thermister4);
-
   float thermisterAve = (thermister1 + thermister2 + thermister3 + thermister4) / 4;
-  //float vOut = (thermisterAve * 0.0038 - .3)*1.52;
   float vOut = thermisterAve;
-  //Serial.println(vOut);
-
-  //float vOut = analogRead(A3)*.0033*1.52;
   
   float r2 = vOut * r1 / ( vIn - vOut );
 
@@ -89,28 +78,21 @@ void loop() {
   temp += 1.0 / (TEMPERATURENOMINAL + 273.15); // + (1/To)
   temp = 1.0 / temp;                 // Invert
   temp -= 273.15;                         // convert absolute temp to C
-  //Serial.println(temp);
-
-  temp = temp - 4;
   
   error = setTemp - temp;
   runningSum = runningSum + error;
   float deriv = error-lastVal;
-  float pid = 512 + 35*error + .05*runningSum + .05*deriv;
-  if(pid > 1023) {
+  float pid = 512 - (35*error + .03*runningSum + .05*deriv);
+  /*if(pid > 1023) { //THIS IS THE MAX OUPUT USE IF CIRCUIT WILL NOT BURN ITSELF
     pid = 1023;
-  }
-  if(pid < 1) {
-    pid = 1;
-  }
-  /*if( pid < 200 ) {
-    pid = 200;
-  }
-  if( pid > 900 ) {
-    pid = 900;
   }*/
-  //Serial.print("Pid: ");
-  //Serial.println(pid);
+  if(pid < 0) {
+    pid = 0;
+  }
+  if( pid > 800 ) { //THIS IS THE REDUCED OUPUT
+    pid = 800;
+  }
+  
   analogWriteResolution(10);
   analogWrite(A0, pid);
   lastVal = error;
@@ -124,13 +106,6 @@ void loop() {
   display.print(temp);
   display.print(" C");
   display.display();
-//  lcd.clear();
-//  lcd.setCursor(0,0);
-//  lcd.print("set temp: ");
-//  lcd.print(setTemp);
-//  lcd.setCursor(0,1);
-//  lcd.print("cur temp: ");
-//  lcd.print("NA");
 }
 
 void increaseB() {
@@ -138,7 +113,7 @@ void increaseB() {
     return;
   }
   setTemp++;
-  delayMicroseconds(2000);
+  delayMicroseconds(2000); //These don't work - need a debounced switch
 }
 
 void decreaseB() {
